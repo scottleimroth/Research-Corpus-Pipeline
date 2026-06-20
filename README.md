@@ -2,9 +2,63 @@
 
 <!-- Public-release provenance marker: Scott Leimroth, Copyright 2026. -->
 
-Portable empty starter corpus for ingesting and searching research PDFs.
+Portable empty starter corpus for ingesting, rating, and searching research PDFs.
 
 This public copy contains no private paper database, no source PDFs, no vector DB, and no API keys. A new user creates their own database from scratch.
+
+## What It Does
+
+Corpus Pipeline MetaCheck turns a folder of research PDFs into a searchable, rated literature corpus.
+
+The basic workflow is simple:
+
+1. Collect PDFs of papers you are interested in.
+2. Put those PDFs into `papers-staging/`.
+3. Run `RUN.bat`.
+4. The pipeline ingests the PDFs, extracts metadata and text, evaluates each paper, stores the results in SQLite, and keeps managed copies of accepted source PDFs.
+5. Run `BUILD_VECTOR.bat` or `UPDATE_VECTORDB.bat` to build semantic search over the corpus.
+6. Use `SEARCH.bat` to interrogate the corpus by meaning, not just by keyword.
+
+The important part is that the pipeline does not just dump every PDF into a database. It builds an evidence package for each document, decides whether it is a ratable research paper, reference item, supplement, erratum, malformed file, duplicate, or other corpus item, and records why that decision was made.
+
+For ratable research papers, the evaluator assigns a quality rating:
+
+- `landmark`
+- `strong`
+- `adequate`
+- `weak`
+- `flawed`
+
+For useful non-paper material, it can keep the document without pretending it is an empirical paper:
+
+- `not_ratable_reference_material`
+- `not_applicable`
+
+## What Gets Rated
+
+The rating system is built around a PhD-level evaluation and red-team standard. It looks at the paper itself, not just the title, abstract, journal name, citation count, or author reputation.
+
+The pipeline extracts and evaluates variables such as:
+
+- article type, including empirical paper, review, meta-analysis, systematic review, theory paper, commentary, book, reference work, supplement, or erratum
+- title, authors, year, journal, DOI, publisher, language, volume, issue, and pages
+- abstract and keywords
+- ethics approval, consent, privacy/anonymisation, and vulnerable-population handling
+- total sample size, age, sex breakdown, population type, clinical group details, recruitment method, and WEIRD-sample bias
+- study design, controls, randomisation, blinding, counterbalancing, order effects, attrition, exclusions, and missing-data handling
+- statistical approach, exact tests used, multiple-comparison correction, effect sizes, power analysis, and sample-size justification
+- open data, open code, funding declarations, and conflicts of interest
+- measurement quality, including reliability, validity, pilot testing, manipulation checks, and domain-specific measurement standards
+- stimulus materials, procedure detail, equipment/software specifications, and whether the study can be replicated
+- analysis pipeline, calibration procedures, specific techniques, and code availability
+- reporting standards, limitations, generalisability, data availability, competing interests, and author-contribution reporting
+- review/meta-analysis-specific checks such as registration, risk of bias, heterogeneity, publication bias, and sensitivity analyses
+- supplements and parent-child document relationships
+- domain tags, methods tags, construct tags, population tags, paradigm tags, stimulus tags, and analysis tags
+
+It also applies a destructive red-team pass to stress-test ratings, especially generous ratings. That pass attacks the paper for sample size, statistical rigor, measurement validity, controls, bias, reproducibility, overclaiming, article-type mismatch, missing evidence, and era-appropriate standards. If the red team finds that the first rating is too generous, the final stored rating is downgraded.
+
+That means the resulting corpus is not just a pile of PDFs. It becomes a structured literature map where papers can be searched semantically, filtered by quality and method, compared by evidence strength, and reviewed with their limitations visible.
 
 ## Quick Start
 
@@ -24,7 +78,7 @@ Recommended for most people:
 
 OpenRouter is a single top-up account that can use cheaper AI models. It supports both normal paper text evaluation and rare scanned/image PDF checks through one key.
 
-Setup explains:
+Setup explained:
 
 1. Go to `https://openrouter.ai`
 2. Create an account
