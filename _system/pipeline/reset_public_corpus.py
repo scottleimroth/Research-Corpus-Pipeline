@@ -85,7 +85,7 @@ def main() -> int:
         "allow_anthropic": True,
         "allow_openai": True,
         "description": (
-            "Empty public MetaCheck starter corpus. SETUP lets the user choose OpenRouter, "
+            "Empty Research Corpus Pipeline starter corpus. SETUP lets the user choose OpenRouter, "
             "DeepSeek, OpenAI, Anthropic, local/free mode, or guided help."
         ),
     }

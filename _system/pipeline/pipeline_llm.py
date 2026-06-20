@@ -172,8 +172,8 @@ def call_openrouter_vision_json(
         base_url=OPENROUTER_BASE_URL,
         timeout=LLM_REQUEST_TIMEOUT_SEC,
         default_headers={
-            "HTTP-Referer": "https://scienceverse.org/metacheck",
-            "X-Title": "CorpusPipeline-MetaCheck-PUBLIC",
+            "HTTP-Referer": "https://github.com/scottleimroth/Research-Corpus-Pipeline",
+            "X-Title": "Research-Corpus-Pipeline",
         },
     )
     try:

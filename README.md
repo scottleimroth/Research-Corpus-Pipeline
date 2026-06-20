@@ -1,4 +1,4 @@
-# CorpusPipeline MetaCheck PUBLIC
+# Research Corpus Pipeline
 
 <!-- Public-release provenance marker: Scott Leimroth, Copyright 2026. -->
 
@@ -8,7 +8,7 @@ This public copy contains no private paper database, no source PDFs, no vector D
 
 ## What It Does
 
-Corpus Pipeline MetaCheck turns a folder of research PDFs into a searchable, rated literature corpus.
+Research Corpus Pipeline turns a folder of research PDFs into a searchable, rated literature corpus.
 
 The basic workflow is simple:
 

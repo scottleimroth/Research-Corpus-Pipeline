@@ -110,8 +110,8 @@ def call_llm(model_key, system, user_text, max_tokens=8192, max_retries=3):
                         base_url=OPENROUTER_BASE_URL,
                         timeout=LLM_REQUEST_TIMEOUT_SEC,
                         default_headers={
-                            "HTTP-Referer": "https://scienceverse.org/metacheck",
-                            "X-Title": "CorpusPipeline-MetaCheck-PUBLIC",
+                            "HTTP-Referer": "https://github.com/scottleimroth/Research-Corpus-Pipeline",
+                            "X-Title": "Research-Corpus-Pipeline",
                         },
                     )
                 elif provider == "local-openai":

@@ -9,5 +9,5 @@
   "vision_model_key": "openrouter-qwen3-vl-32b",
   "allow_anthropic": true,
   "allow_openai": true,
-  "description": "Empty public MetaCheck starter corpus. SETUP lets the user choose OpenRouter, DeepSeek, OpenAI, Anthropic, local/free mode, or guided help."
+  "description": "Empty Research Corpus Pipeline starter corpus. SETUP lets the user choose OpenRouter, DeepSeek, OpenAI, Anthropic, local/free mode, or guided help."
 }

@@ -119,7 +119,7 @@ def _format_cost_line(summary: dict | None, *, before_run: bool = False, estimat
 class CorpusPipelineRunnerApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
-        self.root.title("Corpus Pipeline Runner - MetaCheck")
+        self.root.title("Research Corpus Pipeline")
         self.root.minsize(480, 320)
 
         self.run_id: str | None = None
@@ -141,7 +141,7 @@ class CorpusPipelineRunnerApp:
         self.review_queues_var = tk.StringVar(value="")
         self.db_summary_var = tk.StringVar(value="Complete papers: -")
         self.supplement_var = tk.StringVar(value="Pending child/support docs: 0")
-        self.metacheck_var = tk.StringVar(value="MetaCheck: Real MetaCheck required")
+        self.metacheck_var = tk.StringVar(value="Evidence checks: required")
         self.cost_var = tk.StringVar(value="Cost: waiting to start")
         self.message_var = tk.StringVar(value="")
 
@@ -161,9 +161,9 @@ class CorpusPipelineRunnerApp:
         self.stop_btn = ttk.Button(btn_row, text="Stop", command=self._on_stop, state=tk.DISABLED)
         self.stop_btn.pack(side=tk.LEFT)
 
-        mode_row = ttk.LabelFrame(frame, text="MetaCheck")
+        mode_row = ttk.LabelFrame(frame, text="Evidence checks")
         mode_row.pack(fill=tk.X, **pad)
-        ttk.Label(mode_row, text="Real MetaCheck required for ratable research papers").pack(anchor=tk.W, padx=8, pady=4)
+        ttk.Label(mode_row, text="Structured evidence checks required for ratable research papers").pack(anchor=tk.W, padx=8, pady=4)
 
         self.progress = ttk.Progressbar(frame, mode="determinate", maximum=100)
         self.progress.pack(fill=tk.X, **pad)
@@ -206,8 +206,8 @@ class CorpusPipelineRunnerApp:
             return False
 
     def _preflight_metacheck_mode(self) -> bool:
-        self.status_var.set("Checking MetaCheck...")
-        self.message_var.set("Starting/checking GROBID and Real MetaCheck services...")
+        self.status_var.set("Checking evidence services...")
+        self.message_var.set("Starting/checking GROBID and evidence-check services...")
         self.root.update_idletasks()
         try:
             result = subprocess.run(
@@ -226,21 +226,21 @@ class CorpusPipelineRunnerApp:
             )
         except Exception as exc:
             self.status_var.set("Waiting")
-            self.metacheck_var.set("MetaCheck: requirements not met")
-            self.message_var.set(f"Requirements not met, Real MetaCheck cannot proceed. ({exc})")
+            self.metacheck_var.set("Evidence checks: requirements not met")
+            self.message_var.set(f"Requirements not met; evidence checks cannot proceed. ({exc})")
             return False
         grobid_ok = self._url_ready("http://127.0.0.1:8070/api/isalive")
         metacheck_ok = self._url_ready("http://127.0.0.1:2005/__docs__/")
         if result.returncode != 0 or not (grobid_ok and metacheck_ok):
             self.status_var.set("Waiting")
-            self.metacheck_var.set("MetaCheck: requirements not met")
+            self.metacheck_var.set("Evidence checks: requirements not met")
             detail = (result.stdout or result.stderr or "").strip().splitlines()[-1:] or [""]
             self.message_var.set(
-                "Requirements not met, Real MetaCheck mode cannot proceed. "
-                f"GROBID={grobid_ok}; MetaCheck={metacheck_ok}. {detail[0]}"
+                "Requirements not met; evidence checks cannot proceed. "
+                f"GROBID={grobid_ok}; check service={metacheck_ok}. {detail[0]}"
             )
             return False
-        self.metacheck_var.set("MetaCheck: Real MetaCheck ready")
+        self.metacheck_var.set("Evidence checks: ready")
         return True
 
     def _ai_profile(self) -> dict:
@@ -298,7 +298,7 @@ class CorpusPipelineRunnerApp:
         self.processed_var.set("Processed: 0 / 0")
         self.review_res_var.set("Review resolution: -")
         self.cost_var.set("Cost: estimating...")
-        self.metacheck_var.set("MetaCheck: Real MetaCheck required")
+        self.metacheck_var.set("Evidence checks: required")
 
         self.run_id = make_run_id(RUN_PREFIX)
         self.run_dir = SYSTEM_ROOT / "logs" / "runs" / self.run_id
@@ -476,12 +476,12 @@ class CorpusPipelineRunnerApp:
             "prescan_check": "Checking candidate",
             "ingest": "Ingesting paper",
             "llm_adjudication": "Reviewing blocked paper",
-            "metacheck": "MetaCheck: preparing advanced checks",
-            "metacheck_cached": "MetaCheck: using cached evidence",
-            "metacheck_advanced_grobid_pdf_to_xml": "MetaCheck: running GROBID PDF extraction",
-            "metacheck_advanced_metacheck_xml_checks": "MetaCheck: running Real MetaCheck checks",
-            "metacheck_advanced_metacheck_done": "MetaCheck: advanced checks stored",
-            "metacheck_not_applicable": "MetaCheck: not applicable",
+            "metacheck": "Evidence checks: preparing advanced checks",
+            "metacheck_cached": "Evidence checks: using cached evidence",
+            "metacheck_advanced_grobid_pdf_to_xml": "Evidence checks: running PDF structure extraction",
+            "metacheck_advanced_metacheck_xml_checks": "Evidence checks: running structured checks",
+            "metacheck_advanced_metacheck_done": "Evidence checks: advanced checks stored",
+            "metacheck_not_applicable": "Evidence checks: not applicable",
             "first_pass_finalize": "Running corpus evaluation",
             "completion_check": "Checking evaluation completeness",
             "staging_cleanup": "Cleaning up staging",
@@ -490,7 +490,7 @@ class CorpusPipelineRunnerApp:
 
     def _format_metacheck_line(self, summary: dict | None) -> str:
         if not summary:
-            return "MetaCheck: waiting"
+            return "Evidence checks: waiting"
         current_stage = str(summary.get("current_stage") or "")
         if current_stage.startswith("metacheck"):
             return self._friendly_stage_label(current_stage)
@@ -499,8 +499,8 @@ class CorpusPipelineRunnerApp:
         tech = int(summary.get("metacheck_technical_unavailable_count") or 0)
         failed = int(summary.get("metacheck_failed_count") or 0)
         if adv or na or tech or failed:
-            return f"MetaCheck: Real {adv}; not applicable {na}; technical unavailable {tech}; failed {failed}"
-        return "MetaCheck: Real MetaCheck required"
+            return f"Evidence checks: complete {adv}; not applicable {na}; technical unavailable {tech}; failed {failed}"
+        return "Evidence checks: required"
 
     def _maybe_force_kill(self) -> None:
         if not self.stop_requested or not self._run_active() or self.force_killed:
@@ -714,7 +714,7 @@ class CorpusPipelineRunnerApp:
                 f"Model recovery pending: {int(summary.get('model_recovery_required') or summary.get('model_recovery_required_remaining') or 0)}. "
                 f"Pending child docs: {int(summary.get('pending_child_remaining') or summary.get('pending_child_documents_remaining') or 0)} "
                 f"(corrupt deleted: {int(summary.get('pending_child_corrupt_deleted') or 0)}). "
-                f"MetaCheck Real/not-applicable/technical unavailable/failed: "
+                f"Evidence checks complete/not-applicable/technical unavailable/failed: "
                 f"{int(summary.get('metacheck_advanced_count') or 0)}/"
                 f"{int(summary.get('metacheck_not_applicable_count') or 0)}/"
                 f"{int(summary.get('metacheck_technical_unavailable_count') or 0)}/"

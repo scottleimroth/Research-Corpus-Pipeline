@@ -1,8 +1,8 @@
-# CorpusPipeline MetaCheck PUBLIC setup.ps1
+# Research Corpus Pipeline setup.ps1
 # Windows bootstrap. Run once per machine after copying the folder over.
 #
 # Usage:
-#   cd path\to\CorpusPipeline-MetaCheck-PUBLIC
+#   cd path\to\Research-Corpus-Pipeline
 #   .\setup.ps1
 #
 # What it does:
@@ -25,7 +25,7 @@ function Write-Red($msg)    { Write-Host "  [!!] $msg" -ForegroundColor Red }
 Write-Host ""
 Write-Host "========================================================" -ForegroundColor Cyan
 $folderLabel = Split-Path -Leaf $ProjectRoot
-Write-Host " CorpusPipeline setup ($folderLabel)" -ForegroundColor Cyan
+Write-Host " Research Corpus Pipeline setup ($folderLabel)" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Folder: $ProjectRoot"
