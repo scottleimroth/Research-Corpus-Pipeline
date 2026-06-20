@@ -1,0 +1,122 @@
+# Data - never tracked. Code-only repo.
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.csv
+*.jsonl
+
+# Corpus content and generated runtime state
+papers-staging/*
+!papers-staging/.gitkeep
+papers-rejected/*
+!papers-rejected/.gitkeep
+_system/CorpusStore/**
+!_system/CorpusStore/
+!_system/CorpusStore/source-pdfs/
+!_system/CorpusStore/source-pdfs/.gitkeep
+!_system/CorpusStore/vector-db/
+!_system/CorpusStore/vector-db/.gitkeep
+!_system/CorpusStore/backups/
+!_system/CorpusStore/backups/.gitkeep
+!_system/CorpusStore/cache/
+!_system/CorpusStore/cache/.gitkeep
+source-pdfs/
+papers-for-processing/
+pending-parent-child-documents/
+review/
+Vector-DB-Project/
+Barry-Bibliography-Project/
+Scoping-Review/
+ERSP-Research/
+Methods Paper Project/
+pilot-testing/
+other-projects/
+research/
+audit_data/
+memory/
+papers/
+backups/
+
+# Logs and runtime
+logs/
+_system/logs/**
+!_system/logs/
+!_system/logs/.gitkeep
+*.log
+*.log.gz
+*.bak
+*.tmp
+
+# Local downloads and Python artifacts
+_system/tools/
+_system/models/
+_system/venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments - created per-machine, not shared
+venv/
+docx_env/
+.venv/
+
+# Archive - historical, not code
+archive/
+
+# Reference / standards - large doc folders
+reference/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local secrets
+.env
+*.key
+*.pem
+_system/secrets/*
+!_system/secrets/
+!_system/secrets/.gitkeep
+!_system/secrets/*.example
+
+# Identity / agent files (historical, not pipeline code)
+IDENTITY.md
+SOUL.md
+AGENTS.md
+AGENTS.md.bak
+OPERATING-GUIDELINES.md
+OPERATING-GUIDELINES.md.protected
+USER.md
+MEMORY.md
+HEARTBEAT.md
+EVALUATION-PROTOCOL.md
+BACKLOG_SCAN_REPORT.md
+TOOLS.md
+PLAYWRIGHT-CONFIG.md
+
+# Root-level loose scripts
+/apply_*.py
+/batch*_*.py
+/check_*.py
+/cleanup_*.py
+/extract_*.py
+/find_*.py
+/fix_*.py
+/generate_*.py
+/migrate_*.py
+/process_*.py
+/rebuild_*.py
+/run_*.py
+!/Run_All_Staging.py
+!/_system/launcher/Run_All_Staging.py
+/verify_*.py
+/upload_*.py
+/test_*.py

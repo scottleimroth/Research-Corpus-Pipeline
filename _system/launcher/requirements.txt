@@ -1,0 +1,23 @@
+# Python dependencies for PapersCorpus pipeline.
+#
+# Install with:    python -m pip install -r requirements.txt
+#
+# System binaries (not installed by pip) are required separately:
+#   pdftotext (Poppler), tesseract, ghostscript.
+# See README.md for OS-specific install instructions.
+
+# --- Currently used by the pipeline ---
+anthropic>=0.40           # Claude API client (staging vision arbitration, metadata tier 3)
+openai>=1.40              # DeepSeek + OpenAI-compatible providers (llm_providers.py)
+cryptography>=42.0        # Encrypted folder-local API key (secrets_vault.py)
+requests>=2.32            # CrossRef + Ollama HTTP calls
+
+# --- Added by Phase 2e (six-tier metadata fallback chain) ---
+pypdf>=5.0                # Read PDF embedded /Title /Author fields (tier 2)
+ocrmypdf>=17.0            # OCR wrapper for scanned PDFs (extract_full_text fallback)
+rapidfuzz>=3.0            # Fast fuzzy title dedup (replaces SequenceMatcher hot loop)
+
+# --- Corpus search stack (portable vector + local web UI) ---
+chromadb>=0.5
+sentence-transformers>=3.0
+flask>=3.0

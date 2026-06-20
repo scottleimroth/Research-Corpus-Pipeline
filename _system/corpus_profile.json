@@ -1,0 +1,13 @@
+{
+  "profile": "public",
+  "api_mode": "openrouter",
+  "eval_model_key": "openrouter-deepseek-v4-pro",
+  "eval_escalation": [
+    "openrouter-deepseek-v4-pro",
+    "openrouter-kimi-k2.5"
+  ],
+  "vision_model_key": "openrouter-qwen3-vl-32b",
+  "allow_anthropic": true,
+  "allow_openai": true,
+  "description": "Empty public MetaCheck starter corpus. SETUP lets the user choose OpenRouter, DeepSeek, OpenAI, Anthropic, local/free mode, or guided help."
+}
