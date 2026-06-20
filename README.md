@@ -101,6 +101,8 @@ If unsure, choose `I'm not sure` in setup and it will explain the choices.
 
 This copy includes the Real MetaCheck/GROBID integration.
 
+The corpus pipeline and paper-rating workflow were already developed and working before this MetaCheck integration was added. MetaCheck was later integrated because it is a useful fit: it adds another structured best-practice check to the existing evaluation pipeline and helps make the corpus assessment more methodologically robust.
+
 MetaCheck is a ScienceVerse project for checking research outputs for best-practice signals. ScienceVerse is led by Lisa DeBruine and Daniel Lakens, with broader contributor support. GROBID is used to convert PDFs into structured TEI XML before MetaCheck-style checks run.
 
 For ratable research-paper PDFs:
