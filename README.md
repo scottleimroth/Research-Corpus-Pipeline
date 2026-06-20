@@ -60,7 +60,7 @@ The pipeline extracts and evaluates variables such as:
 
 It also applies a destructive red-team pass to stress-test ratings, especially generous ratings. That pass attacks the paper for sample size, statistical rigor, measurement validity, controls, bias, reproducibility, overclaiming, article-type mismatch, missing evidence, and era-appropriate standards. If the red team finds that the first rating is too generous, the final stored rating is downgraded.
 
-That means the resulting corpus is not just a pile of PDFs. It becomes a structured literature map where papers can be searched semantically, filtered by quality and method, compared by evidence strength, and reviewed with their limitations visible.
+The result is a rated corpus that makes quality, method, and limitations easier to compare across papers.
 
 ## Quick Start
 
