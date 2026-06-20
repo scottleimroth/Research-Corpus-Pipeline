@@ -106,8 +106,10 @@ VENV_DIR       = SYSTEM_ROOT / "venv"
 TOOLS_DIR      = SYSTEM_ROOT / "tools"
 SECRETS_DIR    = SYSTEM_ROOT / "secrets"
 CORPUS_PROFILE_FILE = SYSTEM_ROOT / "corpus_profile.json"
-ANTHROPIC_KEY_FILE = SECRETS_DIR / "anthropic.env"
-ANTHROPIC_ENC_FILE = SECRETS_DIR / "anthropic.env.enc"
+API_KEYS_FILE = SECRETS_DIR / "api_keys.env"
+API_KEYS_ENC_FILE = SECRETS_DIR / "api_keys.env.enc"
+ANTHROPIC_KEY_FILE = API_KEYS_FILE
+ANTHROPIC_ENC_FILE = API_KEYS_ENC_FILE
 DEEPSEEK_KEY_FILE = SECRETS_DIR / "deepseek.env"
 
 PORTABLE_TOOL_BIN_DIRS = [
@@ -138,15 +140,15 @@ def apply_portable_tool_path() -> list[str]:
 def _load_folder_secrets() -> None:
     """Load folder-local secrets.
 
-    Encrypted vault (anthropic.env.enc) is unlocked at RUN time via passphrase.
-    Legacy plaintext anthropic.env is loaded only if no .enc exists (migrate via SETUP).
+    Encrypted vault (api_keys.env.enc) is unlocked at RUN time via passphrase.
+    Legacy plaintext api_keys.env is loaded only if no .enc exists (migrate via SETUP).
     """
-    if ANTHROPIC_ENC_FILE.is_file():
+    if API_KEYS_ENC_FILE.is_file():
         return
-    if not ANTHROPIC_KEY_FILE.is_file():
+    if not API_KEYS_FILE.is_file():
         return
     try:
-        for raw in ANTHROPIC_KEY_FILE.read_text(encoding="utf-8").splitlines():
+        for raw in API_KEYS_FILE.read_text(encoding="utf-8").splitlines():
             line = raw.strip()
             if not line or line.startswith("#") or "=" not in line:
                 continue
@@ -281,27 +283,31 @@ def ensure_dirs():
         d.mkdir(parents=True, exist_ok=True)
 
 
-def _secret_key_status(env_name: str, enc_file: Path = ANTHROPIC_ENC_FILE) -> str:
+def _secrets_vault_exists() -> bool:
+    return API_KEYS_ENC_FILE.is_file()
+
+
+def _secret_key_status(env_name: str, enc_file: Path = API_KEYS_ENC_FILE) -> str:
     val = os.environ.get(env_name, "").strip()
     if val:
-        if enc_file.is_file():
+        if _secrets_vault_exists():
             return "set (unlocked or from env; vault on disk is encrypted)"
         return "set"
-    if enc_file.is_file():
+    if _secrets_vault_exists():
         return "encrypted on disk - unlock at RUN with master passphrase"
     return "NOT SET"
 
 
 def _anthropic_key_status() -> str:
     if ANTHROPIC_API_KEY:
-        if ANTHROPIC_ENC_FILE.is_file():
+        if _secrets_vault_exists():
             return "set (unlocked or from env; vault on disk is encrypted)"
-        if ANTHROPIC_KEY_FILE.is_file():
+        if API_KEYS_FILE.is_file():
             return "set (legacy plaintext - run SETUP to encrypt)"
         return "set"
-    if ANTHROPIC_ENC_FILE.is_file():
+    if _secrets_vault_exists():
         return "encrypted on disk - unlock at RUN with master passphrase"
-    if ANTHROPIC_KEY_FILE.is_file():
+    if API_KEYS_FILE.is_file():
         return "legacy plaintext on disk - run SETUP to encrypt"
     return "NOT SET"
 

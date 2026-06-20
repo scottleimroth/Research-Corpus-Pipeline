@@ -66,12 +66,12 @@ def main() -> int:
     _clear_dir(config.PENDING_PARENT_CHILD_DOCUMENTS, keep_gitkeep=False)
     _clear_dir(config.REVIEW_DIR, keep_gitkeep=False)
 
-    secrets = config.SECRETS_DIR / "anthropic.env"
-    enc = config.SECRETS_DIR / "anthropic.env.enc"
-    if secrets.exists():
-        secrets.unlink()
-    if enc.exists():
-        enc.unlink()
+    for secrets_file in (
+        config.SECRETS_DIR / "api_keys.env",
+        config.SECRETS_DIR / "api_keys.env.enc",
+    ):
+        if secrets_file.exists():
+            secrets_file.unlink()
 
     profile = {
         "profile": "public",

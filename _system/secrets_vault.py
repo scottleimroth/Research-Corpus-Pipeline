@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""Folder-local encrypted API secrets (AES-256-GCM + PBKDF2).
-
-Vault file: secrets/anthropic.env.enc (historical name; may hold DeepSeek + Anthropic keys).
-"""
+"""Folder-local encrypted API secrets (AES-256-GCM + PBKDF2)."""
 
 from __future__ import annotations
 
@@ -32,8 +29,8 @@ KEY_BYTES = 32
 
 SYSTEM_ROOT = Path(__file__).resolve().parent
 SECRETS_DIR = SYSTEM_ROOT / "secrets"
-ENC_FILE = SECRETS_DIR / "anthropic.env.enc"
-LEGACY_FILE = SECRETS_DIR / "anthropic.env"
+ENC_FILE = SECRETS_DIR / "api_keys.env.enc"
+LEGACY_FILE = SECRETS_DIR / "api_keys.env"
 
 ALLOWED_SECRET_KEYS = frozenset(
     {
@@ -193,7 +190,7 @@ def _remove_legacy_plaintext() -> bool:
             except OSError:
                 pass
         try:
-            LEGACY_FILE.write_text("# removed - keys are in anthropic.env.enc\n", encoding="utf-8")
+            LEGACY_FILE.write_text("# removed - keys are in api_keys.env.enc\n", encoding="utf-8")
         except OSError:
             pass
         LEGACY_FILE.unlink(missing_ok=True)
@@ -322,14 +319,14 @@ def cmd_run_unlocked() -> int:
 def cmd_migrate_legacy() -> int:
     existing = read_legacy_plaintext()
     if not existing:
-        print("No plaintext anthropic.env to migrate.", file=sys.stderr)
+        print("No plaintext api_keys.env to migrate.", file=sys.stderr)
         return 1
     if ENC_FILE.is_file():
         print("Encrypted secrets already exist; use merge-secrets-stdin to add keys.", file=sys.stderr)
         return 1
     passphrase = prompt_passphrase(confirm=True)
     write_encrypted_secrets(existing, passphrase)
-    print("OK: migrated plaintext keys to anthropic.env.enc")
+    print("OK: migrated plaintext keys to api_keys.env.enc")
     return 0
 
 

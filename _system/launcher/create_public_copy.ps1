@@ -18,8 +18,8 @@ if (Test-Path $PublicRoot) {
     exit 1
 }
 
-Write-Host "Copying LIVE -> PUBLIC (excluding venv and anthropic.env)..." -ForegroundColor Cyan
-$null = robocopy $LiveRoot $PublicRoot /E /XD venv /XF anthropic.env anthropic.env.enc /NFL /NDL /NJH /NJS /nc /ns /np
+Write-Host "Copying LIVE -> PUBLIC (excluding venv and API key vaults)..." -ForegroundColor Cyan
+$null = robocopy $LiveRoot $PublicRoot /E /XD venv /XF api_keys.env api_keys.env.enc /NFL /NDL /NJH /NJS /nc /ns /np
 if ($LASTEXITCODE -ge 8) {
     Write-Host "ERROR: robocopy failed with exit $LASTEXITCODE" -ForegroundColor Red
     exit 1
@@ -43,4 +43,4 @@ if ($LASTEXITCODE -ne 0) { exit 1 }
 
 Write-Host ""
 Write-Host "Created: $PublicRoot" -ForegroundColor Green
-Write-Host "Recipient: run SETUP.bat and enter their own Anthropic API key."
+Write-Host "Recipient: run SETUP.bat and enter their own AI provider API key."

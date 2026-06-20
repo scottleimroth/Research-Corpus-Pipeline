@@ -12,10 +12,10 @@ if (-not $SystemRoot) {
 }
 
 $SecretsDir = Join-Path $SystemRoot "secrets"
-$EncFile = Join-Path $SecretsDir "anthropic.env.enc"
-$LegacyFile = Join-Path $SecretsDir "anthropic.env"
+$EncFile = Join-Path $SecretsDir "api_keys.env.enc"
+$LegacyFile = Join-Path $SecretsDir "api_keys.env"
 $ProfileFile = Join-Path $SystemRoot "corpus_profile.json"
-$ExampleFile = Join-Path $SecretsDir "anthropic.env.example"
+$ExampleFile = Join-Path $SecretsDir "api_keys.env.example"
 $VaultPy = Join-Path $SystemRoot "secrets_vault.py"
 $VenvPython = Join-Path $SystemRoot "venv\Scripts\python.exe"
 
@@ -36,7 +36,7 @@ if (Test-Path $ProfileFile) {
 function Set-ProfileFields([string]$apiMode, [string]$evalModelKey) {
     $obj = [ordered]@{
         profile = $profile
-        description = "Portable corpus. API keys in _system/secrets/anthropic.env.enc (AES-256); passphrase never stored in folder."
+        description = "Portable corpus. API keys in _system/secrets/api_keys.env.enc (AES-256); passphrase never stored in folder."
         api_mode = $apiMode
         eval_model_key = $evalModelKey
     }
@@ -51,7 +51,7 @@ function Set-ProfileFields([string]$apiMode, [string]$evalModelKey) {
 
 if (-not (Test-Path $ExampleFile)) {
     @(
-        "# Keys are stored encrypted as anthropic.env.enc (AES-256).",
+        "# Keys are stored encrypted as api_keys.env.enc (AES-256).",
         "# Run SETUP.bat - supports DEEPSEEK_API_KEY and/or ANTHROPIC_API_KEY.",
         "# DEEPSEEK_API_KEY=sk-...",
         "# ANTHROPIC_API_KEY=sk-ant-..."
@@ -82,10 +82,10 @@ function Save-EncryptedSecrets([hashtable]$secrets) {
     if ($LASTEXITCODE -ne 0 -and -not (Test-Path $EncFile)) {
         throw "Encryption failed"
     }
-    Write-Ok "Saved encrypted secrets to _system/secrets/anthropic.env.enc"
+    Write-Ok "Saved encrypted secrets to _system/secrets/api_keys.env.enc"
     if (Test-Path $LegacyFile) {
         Remove-Item $LegacyFile -Force -ErrorAction SilentlyContinue
-        Write-Ok "Removed obsolete plaintext anthropic.env"
+        Write-Ok "Removed obsolete plaintext api_keys.env"
     }
 }
 
@@ -168,7 +168,7 @@ if ($Mode -eq "migrate-plaintext") {
         exit 0
     }
     if ($legacy.Count -eq 0) {
-        Write-Warn "No plaintext anthropic.env to migrate"
+        Write-Warn "No plaintext api_keys.env to migrate"
         exit 0
     }
     Write-Warn "Migrating plaintext keys to encrypted vault."
@@ -203,7 +203,7 @@ Write-Host ""
 Write-Host "Secrets: API keys (encrypted, folder-local)" -ForegroundColor Cyan
 
 if (Test-Path $EncFile) {
-    Write-Ok "Encrypted vault present at _system/secrets/anthropic.env.enc"
+    Write-Ok "Encrypted vault present at _system/secrets/api_keys.env.enc"
     $add = Read-Host "Add or replace a key? (deepseek/anthropic/n)"
     if ($add -match '^deepseek') {
         $k = Prompt-Key "Paste DeepSeek API key" ""
@@ -219,7 +219,7 @@ if (Test-Path $EncFile) {
 
 $legacy = Read-LegacyPlaintext
 if ($legacy.Count -gt 0) {
-    Write-Warn "Plaintext anthropic.env found - upgrading to encrypted storage."
+    Write-Warn "Plaintext api_keys.env found - upgrading to encrypted storage."
     Save-EncryptedSecrets $legacy
     if ($legacy.ContainsKey("DEEPSEEK_API_KEY")) {
         Set-ProfileFields "deepseek" "deepseek-v4-pro"

@@ -7,6 +7,8 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent $SystemRoot
 $ProfileFile = Join-Path $SystemRoot "corpus_profile.json"
 $SecretsVault = Join-Path $SystemRoot "secrets_vault.py"
+$SecretsDir = Join-Path $SystemRoot "secrets"
+$EncFile = Join-Path $SecretsDir "api_keys.env.enc"
 $Python = Join-Path $SystemRoot "venv\Scripts\python.exe"
 if (-not (Test-Path $Python)) { $Python = "python" }
 
@@ -31,7 +33,11 @@ function Save-Profile($apiMode, $evalKey, $visionKey, $description, $evalEscalat
 function Save-Key($name, $value) {
     if (-not $value) { return }
     $payload = "$name=$value"
-    $payload | & $Python $SecretsVault encrypt-secrets-stdin
+    if (Test-Path $EncFile) {
+        $payload | & $Python $SecretsVault merge-secrets-stdin
+    } else {
+        $payload | & $Python $SecretsVault encrypt-secrets-stdin
+    }
     if ($LASTEXITCODE -ne 0) {
         throw "Could not save encrypted API key."
     }

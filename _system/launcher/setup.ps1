@@ -10,7 +10,7 @@
 #   2. Installs portable Poppler/Tesseract/Ghostscript into _system/tools/
 #   3. Creates a Python venv inside the folder if none exists
 #   4. Installs Python packages from requirements.txt into the venv
-#   5. Configures encrypted Anthropic API key (_system/secrets/anthropic.env.enc)
+#   5. Configures encrypted AI provider key storage (_system/secrets/api_keys.env.enc)
 #   6. Runs config.py self-check and reports green/red per item
 
 $ErrorActionPreference = "Stop"
@@ -165,8 +165,8 @@ if (Test-Path $publicAiSetup) {
     $secretsLauncher = Join-Path $LauncherRoot "manage_secrets.ps1"
     & $secretsLauncher -SystemRoot $SystemRoot -Mode configure
 }
-$keyFile = Join-Path $SystemRoot "secrets\anthropic.env.enc"
-$legacyKeyFile = Join-Path $SystemRoot "secrets\anthropic.env"
+$keyFile = Join-Path $SystemRoot "secrets\api_keys.env.enc"
+$legacyKeyFile = Join-Path $SystemRoot "secrets\api_keys.env"
 $profileFile = Join-Path $SystemRoot "corpus_profile.json"
 $apiMode = "anthropic"
 $profileName = "personal"

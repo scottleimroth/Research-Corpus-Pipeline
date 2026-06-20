@@ -140,9 +140,9 @@ For scanned/image/malformed PDFs:
 
 ## Privacy And Keys
 
-API keys are stored encrypted in `_system/secrets/anthropic.env.enc`.
+API keys are stored encrypted in `_system/secrets/api_keys.env.enc`.
 
-The filename is historical; it may contain OpenRouter, DeepSeek, OpenAI, or Anthropic keys. The setup asks the user for a passphrase. The passphrase is not stored.
+The vault may contain OpenRouter, DeepSeek, OpenAI, or Anthropic keys. The setup asks the user for a passphrase. The passphrase is not stored.
 
 This public folder should be shared only after confirming:
 
