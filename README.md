@@ -38,6 +38,8 @@ For useful non-paper material, it can keep the document without pretending it is
 
 The rating system is built around a PhD-level evaluation and red-team standard. It looks at the paper itself, not just the title, abstract, journal name, citation count, or author reputation.
 
+The rating variables are grounded in guideline papers and reporting standards for quality scientific publishing: the kinds of guidelines that describe what a well reported, methodologically sound paper should include. The aim is to check whether the paper gives enough information to assess its design, methods, statistics, transparency, limitations, and reproducibility.
+
 The pipeline extracts and evaluates variables such as:
 
 - article type, including empirical paper, review, meta-analysis, systematic review, theory paper, commentary, book, reference work, supplement, or erratum
