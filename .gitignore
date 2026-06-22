@@ -22,7 +22,7 @@ _system/CorpusStore/**
 !_system/CorpusStore/backups/.gitkeep
 !_system/CorpusStore/cache/
 !_system/CorpusStore/cache/.gitkeep
-source-pdfs/
+/source-pdfs/
 papers-for-processing/
 pending-parent-child-documents/
 review/
@@ -37,7 +37,7 @@ research/
 audit_data/
 memory/
 papers/
-backups/
+/backups/
 
 # Logs and runtime
 logs/
@@ -51,6 +51,10 @@ _system/logs/**
 
 # Local downloads and Python artifacts
 _system/tools/
+!_system/tools/
+_system/tools/*
+!_system/tools/metacheck-plumber/
+!_system/tools/metacheck-plumber/helpers.R
 _system/models/
 _system/venv/
 __pycache__/

@@ -15,6 +15,10 @@ if (-not (Test-Path $Python)) { $Python = "python" }
 function Write-Info($msg) { Write-Host $msg -ForegroundColor Cyan }
 function Write-Ok($msg) { Write-Host "  [OK] $msg" -ForegroundColor Green }
 function Write-Warn($msg) { Write-Host "  [..] $msg" -ForegroundColor Yellow }
+function Write-JsonNoBom($path, $obj, $depth = 6) {
+    $json = ($obj | ConvertTo-Json -Depth $depth) + [Environment]::NewLine
+    [System.IO.File]::WriteAllText($path, $json, [System.Text.UTF8Encoding]::new($false))
+}
 
 function Save-Profile($apiMode, $evalKey, $visionKey, $description, $evalEscalation) {
     $profile = [ordered]@{
@@ -27,7 +31,23 @@ function Save-Profile($apiMode, $evalKey, $visionKey, $description, $evalEscalat
         allow_openai = $true
         description = $description
     }
-    $profile | ConvertTo-Json -Depth 6 | Set-Content -Path $ProfileFile -Encoding UTF8
+    Write-JsonNoBom $ProfileFile $profile 6
+}
+
+function Save-LocalProfile($baseUrl, $modelId) {
+    $profile = [ordered]@{
+        profile = "public"
+        api_mode = "ollama_local"
+        eval_model_key = "geekom-qwen3-30b-local"
+        eval_escalation = @("geekom-qwen3-30b-local")
+        vision_model_key = ""
+        local_openai_base_url = $baseUrl
+        local_openai_model_id = $modelId
+        allow_anthropic = $true
+        allow_openai = $true
+        description = "Public local/free mode using a local OpenAI-compatible endpoint."
+    }
+    Write-JsonNoBom $ProfileFile $profile 6
 }
 
 function Save-Key($name, $value) {
@@ -59,7 +79,7 @@ function Explain-Choices {
     Write-Host "  DeepSeek: cheap and good for normal text PDFs, but weak/no vision fallback."
     Write-Host "  OpenAI: easy if you already have it, but usually more expensive."
     Write-Host "  Anthropic: strong quality, but usually more expensive."
-    Write-Host "  Local/free: no API bill, but needs local AI software and is harder to set up."
+    Write-Host "  Local/free: no API bill, but advanced, slow, and less reliable on full-paper JSON evaluation."
     Write-Host ""
 }
 
@@ -73,7 +93,7 @@ while ($true) {
     Write-Host "2. DeepSeek only"
     Write-Host "3. OpenAI"
     Write-Host "4. Anthropic"
-    Write-Host "5. Local/free mode (advanced)"
+    Write-Host "5. Local/free mode (advanced/slow)"
     Write-Host "6. I'm not sure - explain this"
     Write-Host ""
     $choice = Read-Host "Choose 1-6"
@@ -150,9 +170,16 @@ while ($true) {
     if ($choice -eq "5") {
         Write-Host ""
         Write-Info "Local/free mode"
-        Write-Host "This avoids API bills, but it needs local AI software and may be slower/weaker."
-        Write-Host "Choose this only if you already know how to run Ollama or a local OpenAI-compatible model."
-        Save-Profile "ollama_local" "qwen3-8b" "" "Public local/free mode. Requires local model setup by the user." @("qwen3-8b")
+        Write-Host "This avoids API bills, but it is advanced and can be very slow."
+        Write-Host "On large papers it may take several minutes per attempt and may be less reliable at strict JSON output."
+        Write-Host "For most public users, OpenRouter is the recommended option."
+        Write-Host "For Lemonade/Ollama on this machine, the usual endpoint is http://localhost:11434/v1."
+        Write-Host ""
+        $baseUrl = Read-Host "Local OpenAI-compatible URL [http://localhost:11434/v1]"
+        if (-not $baseUrl) { $baseUrl = "http://localhost:11434/v1" }
+        $modelId = Read-Host "Local model ID [qwen3:8b]"
+        if (-not $modelId) { $modelId = "qwen3:8b" }
+        Save-LocalProfile $baseUrl $modelId
         Write-Ok "Configured local/free mode."
         break
     }

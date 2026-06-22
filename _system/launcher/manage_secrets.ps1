@@ -22,6 +22,10 @@ $VenvPython = Join-Path $SystemRoot "venv\Scripts\python.exe"
 function Write-Ok($m)   { Write-Host '  [OK]' $m -ForegroundColor Green }
 function Write-Warn($m) { Write-Host '  [..]' $m -ForegroundColor Yellow }
 function Write-Bad($m)  { Write-Host '  [!!]' $m -ForegroundColor Red }
+function Write-JsonNoBom($path, $obj, $depth = 8) {
+    $json = ($obj | ConvertTo-Json -Depth $depth) + [Environment]::NewLine
+    [System.IO.File]::WriteAllText($path, $json, [System.Text.UTF8Encoding]::new($false))
+}
 
 if (-not (Test-Path $SecretsDir)) { New-Item -ItemType Directory -Path $SecretsDir -Force | Out-Null }
 
@@ -46,7 +50,7 @@ function Set-ProfileFields([string]$apiMode, [string]$evalModelKey) {
             if ($existing.description) { $obj.description = [string]$existing.description }
         } catch { }
     }
-    ($obj | ConvertTo-Json -Depth 8) + "`n" | Set-Content -Path $ProfileFile -Encoding UTF8
+    Write-JsonNoBom $ProfileFile $obj 8
 }
 
 if (-not (Test-Path $ExampleFile)) {

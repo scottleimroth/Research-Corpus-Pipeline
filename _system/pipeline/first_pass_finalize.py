@@ -525,12 +525,14 @@ def run_until_evaluation_complete(
 ) -> dict[str, Any]:
     """Block until rating+red_team (or non-ratable classification) is complete."""
     from eval_completion import is_ingest_evaluation_complete
+    from eval_model_config import build_eval_escalation_ladder
     from evaluate_paper import evaluate_one
     from document_corpus_classification import apply_non_ratable_reference_classification
 
     sidecar_flags = sidecar_flags or {}
     last_reason = ""
     started = time.monotonic()
+    eval_ladder = build_eval_escalation_ladder(profile=config.CORPUS_PROFILE)
 
     if non_ratable:
         apply_non_ratable_reference_classification(
@@ -563,8 +565,13 @@ def run_until_evaluation_complete(
         paper = papers_db.get_paper(paper_id) or {}
         coverage = prep.get("coverage") or {}
 
-        if not allow_paid_api or client is None:
-            return {"ok": False, "reason": "no_paid_api", "attempts": attempt, "prep": prep}
+        if not eval_ladder:
+            return {
+                "ok": False,
+                "reason": "no_eval_model_available",
+                "attempts": attempt,
+                "prep": prep,
+            }
 
         if coverage and coverage.get("evidence_can_support_rating") is False:
             cov_status = str(coverage.get("coverage_status") or "")

@@ -14,11 +14,31 @@ import time
 import urllib.error
 import urllib.request
 import json
+from pathlib import Path
 
 # Network timeout for paid LLM API calls (seconds). Prevents GUI appearing frozen.
 LLM_REQUEST_TIMEOUT_SEC = 120.0
-LOCAL_OPENAI_BASE_URL = os.environ.get("LOCAL_OPENAI_BASE_URL", "http://localhost:13305/api/v1").rstrip("/")
-LOCAL_OPENAI_MODEL_ID = os.environ.get("LOCAL_OPENAI_MODEL_ID", "Qwen3-30B-A3B-GGUF")
+# Local GGUF/Ollama-style runs can be much slower than cloud APIs on full-paper
+# prompts, so keep a separate timeout instead of weakening cloud failure handling.
+LOCAL_LLM_REQUEST_TIMEOUT_SEC = float(os.environ.get("LOCAL_LLM_REQUEST_TIMEOUT_SEC", "900"))
+def _local_profile_value(name: str, default: str) -> str:
+    try:
+        profile_path = Path(__file__).resolve().parent.parent / "corpus_profile.json"
+        data = json.loads(profile_path.read_text(encoding="utf-8-sig"))
+        value = str(data.get(name) or "").strip()
+        return value or default
+    except Exception:
+        return default
+
+
+LOCAL_OPENAI_BASE_URL = os.environ.get(
+    "LOCAL_OPENAI_BASE_URL",
+    _local_profile_value("local_openai_base_url", "http://localhost:11434/v1"),
+).rstrip("/")
+LOCAL_OPENAI_MODEL_ID = os.environ.get(
+    "LOCAL_OPENAI_MODEL_ID",
+    _local_profile_value("local_openai_model_id", "qwen3:8b"),
+)
 LOCAL_OPENAI_API_KEY = os.environ.get("LOCAL_OPENAI_API_KEY", "lemonade")
 LOCAL_OPENAI_NO_THINK = os.environ.get("LOCAL_OPENAI_NO_THINK", "1").strip().lower() not in {"0", "false", "no", "off"}
 OPENROUTER_BASE_URL = os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1").rstrip("/")
@@ -128,13 +148,13 @@ def call_llm(model_key, system, user_text, max_tokens=8192, max_retries=3):
                     client = OpenAI(
                         api_key=LOCAL_OPENAI_API_KEY,
                         base_url=LOCAL_OPENAI_BASE_URL,
-                        timeout=LLM_REQUEST_TIMEOUT_SEC,
+                        timeout=LOCAL_LLM_REQUEST_TIMEOUT_SEC,
                     )
                 else:  # ollama
                     client = OpenAI(
                         api_key="ollama",  # ignored by Ollama but openai client requires it
                         base_url="http://localhost:11434/v1",
-                        timeout=LLM_REQUEST_TIMEOUT_SEC,
+                        timeout=LOCAL_LLM_REQUEST_TIMEOUT_SEC,
                     )
                 system_content = system
                 user_content = user_text
@@ -142,6 +162,11 @@ def call_llm(model_key, system, user_text, max_tokens=8192, max_retries=3):
                     no_think = "/no_think\n"
                     if not system_content.lstrip().startswith("/no_think"):
                         system_content = no_think + system_content
+                request_timeout = (
+                    LOCAL_LLM_REQUEST_TIMEOUT_SEC
+                    if provider in {"local-openai", "ollama"}
+                    else LLM_REQUEST_TIMEOUT_SEC
+                )
                 resp = client.chat.completions.create(
                     model=model_id,
                     max_tokens=max_tokens,
@@ -149,7 +174,7 @@ def call_llm(model_key, system, user_text, max_tokens=8192, max_retries=3):
                         {"role": "system", "content": system_content},
                         {"role": "user", "content": user_content},
                     ],
-                    timeout=LLM_REQUEST_TIMEOUT_SEC,
+                    timeout=request_timeout,
                 )
                 message = resp.choices[0].message
                 text = message.content or ""

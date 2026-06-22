@@ -70,9 +70,13 @@ The result is a rated corpus that makes quality, method, and limitations easier 
 4. Double-click `RUN.bat`.
 5. After papers are added, run `BUILD_VECTOR.bat` or `UPDATE_VECTORDB.bat` for semantic search.
 
+**Note:** Initial setup may take 3 to 5 minutes while your computer downloads and creates the folders and files needed to run the program.
+
 ## AI Provider Choice
 
 The setup asks which AI provider to use.
+
+The provider you choose becomes the paper evaluator. Anthropic/Claude is not required. The pipeline can evaluate papers through OpenRouter, DeepSeek, OpenAI, Anthropic, or a local OpenAI-compatible model server such as Ollama or Lemonade.
 
 Recommended for most people:
 
@@ -93,9 +97,13 @@ Other choices:
 - `DeepSeek`: cheap and good for normal text PDFs, but limited vision/scanned-PDF support.
 - `OpenAI`: good text and vision if the user already has an OpenAI key, but usually more expensive.
 - `Anthropic`: strong quality if the user already has a Claude/Anthropic key, but usually more expensive.
-- `Local/free mode`: no API bill, but requires local AI software and is harder to set up.
+- `Local/free mode`: no API bill and no cloud AI key, but advanced, slow, and less reliable on strict full-paper JSON evaluation. See [LOCAL_MODEL_SETUP.md](LOCAL_MODEL_SETUP.md).
 
 If unsure, choose `I'm not sure` in setup and it will explain the choices.
+
+### Local Model Setup
+
+Local mode is optional and mainly for advanced users. It avoids API bills, but it can take several minutes per paper attempt on large PDFs and may fail strict JSON formatting on some local models. Beginner instructions are in [LOCAL_MODEL_SETUP.md](LOCAL_MODEL_SETUP.md).
 
 ## MetaCheck
 

@@ -169,7 +169,7 @@ def _load_corpus_profile() -> dict:
     if not CORPUS_PROFILE_FILE.is_file():
         return {"profile": "personal", "api_mode": "anthropic"}
     try:
-        data = json.loads(CORPUS_PROFILE_FILE.read_text(encoding="utf-8"))
+        data = json.loads(CORPUS_PROFILE_FILE.read_text(encoding="utf-8-sig"))
         if not isinstance(data, dict):
             return {"profile": "personal", "api_mode": "anthropic"}
         if "profile" not in data:

@@ -1542,6 +1542,12 @@ def process_one_staging_pdf(
                 }
             if llm_usage:
                 outcome["llm_adjudication_usage"] = llm_usage
+            local_recovery_decision = str(
+                adj.get("decision")
+                or adj.get("action")
+                or adj.get("ingest_kind")
+                or ""
+            ).upper()
             if adj.get("llm_force_retry_ingest") and not llm_retry_used and staging_path.exists():
                 llm_retry_used = True
                 process_args["llm_force_acceptance"] = bool(adj.get("llm_force_acceptance"))
@@ -1557,6 +1563,22 @@ def process_one_staging_pdf(
                 }
                 force_research_eval = str(adj.get("decision") or "") == "INGEST_RESEARCH_PAPER"
                 ingested = process_paper(str(staging_path), process_args)
+            elif (
+                adj.get("recovered_to_staging")
+                and not allow_paid_api
+                and not llm_retry_used
+                and staging_path.exists()
+                and local_recovery_decision in {"INGEST_RESEARCH_PAPER", "ACCEPT_RESEARCH"}
+            ):
+                llm_retry_used = True
+                process_args["llm_force_acceptance"] = True
+                process_args["llm_force_full_ocr"] = True
+                outcome["local_recovery_retry"] = {
+                    "decision": local_recovery_decision,
+                    "reason": adj.get("reason"),
+                }
+                force_research_eval = True
+                ingested = _drive_ingest_with_escalation(staging_path, process_args)
             else:
                 outcome.update(
                     _terminal_recovery_outcome(
@@ -1754,7 +1776,44 @@ def process_one_staging_pdf(
             elif recovery.get("deleted_unrecoverable"):
                 outcome.update(status="deleted_unrecoverable", reason="ingest_failed_unrecoverable", stage="ingest")
             elif recovery.get("recovered_to_staging"):
-                if allow_paid_api and staging_path.exists():
+                recovery_decision = str(
+                    recovery.get("decision")
+                    or recovery.get("action")
+                    or recovery.get("ingest_kind")
+                    or ""
+                ).upper()
+                if (
+                    not allow_paid_api
+                    and staging_path.exists()
+                    and recovery_decision in {"INGEST_RESEARCH_PAPER", "ACCEPT_RESEARCH"}
+                ):
+                    local_args = dict(process_args)
+                    local_args["llm_force_acceptance"] = True
+                    local_args["llm_force_full_ocr"] = True
+                    outcome["local_recovery_retry"] = {
+                        "decision": recovery_decision,
+                        "reason": recovery.get("reason"),
+                    }
+                    ingested = _drive_ingest_with_escalation(staging_path, local_args)
+                    if ingested:
+                        pass
+                    else:
+                        rec = intake_rejected.archive_staging_file(
+                            staging_path,
+                            status="moved_to_rejected",
+                            reason="local_recovery_retry_failed",
+                            user_reason=(
+                                "Local model recovery confirmed this looked like a research paper, "
+                                "but full OCR/forced ingest still could not add it."
+                            ),
+                        )
+                        outcome.update(
+                            status="moved_to_rejected",
+                            reason="local_recovery_retry_failed",
+                            stage="ingest",
+                            **(rec or {}),
+                        )
+                elif allow_paid_api and staging_path.exists():
                     llm_client = client or anthropic.Anthropic()
                     llm = _llm_final_adjudication_for_block(
                         staging_path,

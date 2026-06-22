@@ -21,6 +21,10 @@ $ProjectRoot = Split-Path -Parent $SystemRoot
 function Write-Green($msg)  { Write-Host "  [OK] $msg" -ForegroundColor Green }
 function Write-Yellow($msg) { Write-Host "  [..] $msg" -ForegroundColor Yellow }
 function Write-Red($msg)    { Write-Host "  [!!] $msg" -ForegroundColor Red }
+function Write-JsonNoBom($path, $obj, $depth = 4) {
+    $json = ($obj | ConvertTo-Json -Depth $depth) + [Environment]::NewLine
+    [System.IO.File]::WriteAllText($path, $json, [System.Text.UTF8Encoding]::new($false))
+}
 
 Write-Host ""
 Write-Host "========================================================" -ForegroundColor Cyan
@@ -184,6 +188,23 @@ Write-Host ""
 Write-Host "[6/6] Pipeline config self-check" -ForegroundColor Cyan
 & $venvPython (Join-Path $SystemRoot "config.py")
 
+# Ensure a fresh public copy has a valid empty SQLite schema before first RUN.
+$initDbCode = @"
+import sys
+from pathlib import Path
+root = Path(r"$SystemRoot")
+sys.path.insert(0, str(root))
+sys.path.insert(0, str(root / "pipeline"))
+import papers_db
+papers_db.init_db()
+print(f"SQLite ready: {papers_db.get_paper_count()} papers")
+"@
+$initDbCode | & $venvPython -
+if ($LASTEXITCODE -ne 0) {
+    Write-Red "Could not initialize SQLite papers database."
+    exit 1
+}
+
 $binOk = (Test-PortableBin "tools\poppler\Library\bin\pdftotext.exe") `
     -and (Test-PortableBin "tools\tesseract\tesseract.exe") `
     -and (Test-PortableBin "tools\ghostscript\bin\gswin64c.exe") `
@@ -204,7 +225,7 @@ $status = @{
 $statusDir = Join-Path $SystemRoot "CorpusStore"
 if (-not (Test-Path $statusDir)) { New-Item -ItemType Directory -Path $statusDir | Out-Null }
 $statusPath = Join-Path $statusDir "setup_status.json"
-$status | ConvertTo-Json -Depth 4 | Set-Content -Path $statusPath -Encoding UTF8
+Write-JsonNoBom $statusPath $status 4
 Write-Green "Wrote setup status to CorpusStore\setup_status.json"
 
 Write-Host ""
