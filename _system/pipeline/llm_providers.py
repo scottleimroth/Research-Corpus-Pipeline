@@ -94,8 +94,15 @@ def local_openai_available(*, ttl_seconds: int = 30) -> bool:
     if cached and (now - cached[0]) < ttl_seconds:
         return cached[1]
     url = f"{LOCAL_OPENAI_BASE_URL}/models"
+    # Send the key: a gateway that requires one answers /models with 401, and an
+    # unauthenticated probe would read that as "server down" and quietly skip the
+    # local lane. Bare Ollama/llama.cpp ignore the header, so always sending it
+    # is safe.
+    request = urllib.request.Request(url)
+    if LOCAL_OPENAI_API_KEY:
+        request.add_header("Authorization", f"Bearer {LOCAL_OPENAI_API_KEY}")
     try:
-        with urllib.request.urlopen(url, timeout=3) as resp:
+        with urllib.request.urlopen(request, timeout=3) as resp:
             raw = resp.read().decode("utf-8", errors="replace")
         data = json.loads(raw)
         models = data.get("data") if isinstance(data, dict) else []
@@ -104,6 +111,24 @@ def local_openai_available(*, ttl_seconds: int = 30) -> bool:
             and LOCAL_OPENAI_MODEL_ID in {str(item.get("id") or ""), str(item.get("checkpoint") or "")}
             for item in (models or [])
         )
+        if not ok and models:
+            # Reachable, but the configured model id is not served -- almost
+            # always a typo in SETUP. Name it instead of reporting "unavailable".
+            print(
+                f"    local model {LOCAL_OPENAI_MODEL_ID!r} not served by "
+                f"{LOCAL_OPENAI_BASE_URL} (offers: "
+                f"{', '.join(sorted(str(m.get('id')) for m in models if isinstance(m, dict))[:8])})",
+                flush=True,
+            )
+    except urllib.error.HTTPError as exc:
+        # 401/403 is a wrong-or-missing key, not an outage.
+        if exc.code in (401, 403):
+            print(
+                f"    local model probe rejected by {LOCAL_OPENAI_BASE_URL} "
+                f"(HTTP {exc.code}): check LOCAL_OPENAI_API_KEY",
+                flush=True,
+            )
+        ok = False
     except (OSError, urllib.error.URLError, json.JSONDecodeError):
         ok = False
     _LOCAL_AVAILABILITY_CACHE[LOCAL_OPENAI_MODEL_ID] = (now, ok)
