@@ -178,8 +178,26 @@ def call_llm(model_key, system, user_text, max_tokens=8192, max_retries=3):
                 )
                 message = resp.choices[0].message
                 text = message.content or ""
-                if provider == "local-openai" and not text and getattr(message, "reasoning_content", None):
-                    raise RuntimeError("local model returned reasoning_content but no final content")
+                # A 200 with empty content is the standard thinking-model failure:
+                # the whole output budget went to reasoning and no answer was ever
+                # emitted. Servers spell the field TWO ways -- vLLM with a qwen3-style
+                # reasoning parser emits `reasoning`, llama.cpp/Ollama/LiteLLM emit
+                # `reasoning_content` -- so both are checked. Checking only one lets
+                # the guard silently not fire, and an empty string then travels on as
+                # if it were the model's answer.
+                if provider in {"local-openai", "ollama"} and not text:
+                    thinking = next(
+                        (t for t in (getattr(message, "reasoning_content", None),
+                                     getattr(message, "reasoning", None))
+                         if isinstance(t, str) and t.strip()),
+                        None,
+                    )
+                    if thinking:
+                        finish = getattr(resp.choices[0], "finish_reason", None)
+                        raise RuntimeError(
+                            f"local model returned reasoning ({len(thinking)} chars) but no "
+                            f"final content (finish_reason={finish}) - raise max_tokens"
+                        )
                 in_tok = getattr(resp.usage, "prompt_tokens", 0) if resp.usage else 0
                 out_tok = getattr(resp.usage, "completion_tokens", 0) if resp.usage else 0
             else:
