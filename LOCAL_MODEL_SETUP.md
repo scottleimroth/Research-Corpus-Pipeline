@@ -105,18 +105,22 @@ qwen3:8b
 
 Then put PDFs in `papers-staging` and run `RUN.bat`.
 
-### Step 5: If You Use The Staging Screen, Also Set `OLLAMA_URL`
+### Step 5 (Optional): Enable The Local Metadata Reader
 
-The staging screen has its own separate check for a local server, and it reads
-an environment variable called `OLLAMA_URL` rather than the URL you typed into
-SETUP. Set it to the same server address, without the `/v1` part:
+Separately from the evaluator, the pipeline can use a local Ollama server to
+read basic details (title, authors, year) out of PDFs during import. This is
+optional — without it, the pipeline just uses its other metadata methods.
+
+To turn it on, set the `OLLAMA_URL` environment variable to your Ollama
+server's address, without the `/v1` part:
 
 ```powershell
 setx OLLAMA_URL "http://localhost:11434"
 ```
 
-Open a new terminal afterwards for the change to take effect. If you only use
-`RUN.bat` and never the staging screen, you can skip this.
+Open a new terminal afterwards for the change to take effect. This only works
+with Ollama (Lemonade does not offer this interface), and there is no built-in
+default address on purpose.
 
 ## Option B: Lemonade
 
@@ -197,12 +201,12 @@ built-in address is worse than an early, clear error. If you see an error
 naming `local_openai_base_url` or `LOCAL_OPENAI_BASE_URL`, run `SETUP.bat`,
 choose `Local/free mode`, and enter the URL and model ID again.
 
-### Staging says `local_ollama_mode` failed, or `OLLAMA_URL is not set`
+### Staging says `local_model_mode` failed
 
-The staging screen checks a local server address held in the `OLLAMA_URL`
-environment variable, which is separate from the URL you gave SETUP. There is
-no built-in default for it on purpose — a guessed address that nothing answers
-is worse than a clear message. See Step 5 under Option A above.
+The staging screen checks the same local server URL you gave SETUP. If this
+check fails, your local server is not running, is at a different address than
+you entered, or no longer lists the model ID you configured. Start the server,
+or re-run `SETUP.bat` → `Local/free mode` with the current URL and model ID.
 
 ### Local model unavailable
 

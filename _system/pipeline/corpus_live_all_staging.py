@@ -13,8 +13,6 @@ import sqlite3
 import sys
 import time
 import traceback
-import urllib.error
-import urllib.request
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -1381,20 +1379,35 @@ def validate_live_gates(args) -> tuple[bool, list[dict[str, Any]], dict[str, Any
             ctx["sonnet_unavailable"] = True
             return False, checks, ctx
     else:
-        ollama_ok = False
-        detail = config.OLLAMA_URL
-        if not config.OLLAMA_URL:
-            detail = "OLLAMA_URL is not set (no default -- point it at your server)"
-            checks.append(_result("local_ollama_mode", False, detail))
+        # Probe the OpenAI-compatible endpoint the run will actually use --
+        # the URL SETUP's local/free mode collected -- not Ollama's native
+        # /api/tags on the separate OLLAMA_URL. That variable was never set by
+        # SETUP, so this gate used to probe an address nothing else in the run
+        # consulted (forgejo #42); OLLAMA_URL now only feeds the optional
+        # ollama metadata tier.
+        from llm_providers import (
+            LOCAL_OPENAI_BASE_URL,
+            LOCAL_OPENAI_MODEL_ID,
+            local_openai_available,
+        )
+
+        if not LOCAL_OPENAI_BASE_URL:
+            checks.append(_result(
+                "local_model_mode",
+                False,
+                "no local model URL configured (no default) -- run SETUP "
+                "Local/free mode, or set local_openai_base_url in "
+                "_system/corpus_profile.json or LOCAL_OPENAI_BASE_URL",
+            ))
             return False, checks, ctx
-        try:
-            with urllib.request.urlopen(config.OLLAMA_URL.rstrip("/") + "/api/tags", timeout=3) as resp:
-                ollama_ok = (resp.status == 200)
-                detail = f"{config.OLLAMA_URL} status={resp.status}"
-        except (urllib.error.URLError, TimeoutError, OSError) as exc:
-            detail = f"{config.OLLAMA_URL} unreachable: {type(exc).__name__}"
-        checks.append(_result("local_ollama_mode", ollama_ok, detail))
-        if not ollama_ok:
+        local_ok = local_openai_available()
+        detail = (
+            f"{LOCAL_OPENAI_BASE_URL} lists {LOCAL_OPENAI_MODEL_ID}"
+            if local_ok
+            else f"{LOCAL_OPENAI_BASE_URL} did not answer /models or does not list {LOCAL_OPENAI_MODEL_ID}"
+        )
+        checks.append(_result("local_model_mode", local_ok, detail))
+        if not local_ok:
             return False, checks, ctx
 
     qc_ok, qc_msg = _quick_check_ok()
