@@ -77,13 +77,6 @@ MODELS = {
     # Local OpenAI-compatible endpoint (free, zero cost); the URL comes from
     # SETUP / corpus_profile.json or LOCAL_OPENAI_BASE_URL -- see comment above.
     LOCAL_MODEL_KEY:     ("local-openai", LOCAL_OPENAI_MODEL_ID, 0.0, 0.0),
-    # Retired Ollama lane (hardcoded localhost:11434): selecting these keys
-    # raises in call_llm; local models go through the local-openai provider
-    # configured by SETUP. Deleting the entries is pending Scott's call (he
-    # chose deletion in asx-alerts, 2026-07-31).
-    "qwen3.6-35b":      ("ollama", "qwen3.6:35b-a3b", 0.0, 0.0),
-    "gemma4-26b":       ("ollama", "gemma4:26b", 0.0, 0.0),
-    "qwen3-8b":         ("ollama", "qwen3:8b", 0.0, 0.0),
 }
 
 
@@ -138,7 +131,7 @@ def call_llm(model_key, system, user_text, max_tokens=8192, max_retries=3):
                 text = resp.content[0].text
                 in_tok = resp.usage.input_tokens
                 out_tok = resp.usage.output_tokens
-            elif provider in ("openai", "deepseek", "openrouter", "ollama", "local-openai"):
+            elif provider in ("openai", "deepseek", "openrouter", "local-openai"):
                 from openai import OpenAI
                 if provider == "openai":
                     client = OpenAI(timeout=LLM_REQUEST_TIMEOUT_SEC)
@@ -183,19 +176,6 @@ def call_llm(model_key, system, user_text, max_tokens=8192, max_retries=3):
                         base_url=LOCAL_OPENAI_BASE_URL,
                         timeout=LOCAL_LLM_REQUEST_TIMEOUT_SEC,
                     )
-                else:  # ollama
-                    # Retired lane: the hardcoded localhost:11434 assumed an
-                    # Ollama install that need not exist, so selection probed a
-                    # dead port. Local models go through the local-openai
-                    # provider configured by SETUP. Deleting the provider is
-                    # pending Scott's call (asx-alerts precedent, 2026-07-31,
-                    # where he chose deletion) -- until then it fails loudly.
-                    raise LLMConfigError(
-                        f"model {model_key!r} routes to the retired 'ollama' "
-                        "provider (hardcoded localhost:11434). Configure local "
-                        "mode via SETUP (local-openai provider, key "
-                        f"{LOCAL_MODEL_KEY!r}) or use a cloud model."
-                    )
                 system_content = system
                 user_content = user_text
                 if provider == "local-openai" and LOCAL_OPENAI_NO_THINK:
@@ -204,7 +184,7 @@ def call_llm(model_key, system, user_text, max_tokens=8192, max_retries=3):
                         system_content = no_think + system_content
                 request_timeout = (
                     LOCAL_LLM_REQUEST_TIMEOUT_SEC
-                    if provider in {"local-openai", "ollama"}
+                    if provider == "local-openai"
                     else LLM_REQUEST_TIMEOUT_SEC
                 )
                 resp = client.chat.completions.create(
@@ -225,7 +205,7 @@ def call_llm(model_key, system, user_text, max_tokens=8192, max_retries=3):
                 # `reasoning_content` -- so both are checked. Checking only one lets
                 # the guard silently not fire, and an empty string then travels on as
                 # if it were the model's answer.
-                if provider in {"local-openai", "ollama"} and not text:
+                if provider == "local-openai" and not text:
                     thinking = next(
                         (t for t in (getattr(message, "reasoning_content", None),
                                      getattr(message, "reasoning", None))
