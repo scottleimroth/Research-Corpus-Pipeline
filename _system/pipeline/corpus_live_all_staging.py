@@ -1383,6 +1383,10 @@ def validate_live_gates(args) -> tuple[bool, list[dict[str, Any]], dict[str, Any
     else:
         ollama_ok = False
         detail = config.OLLAMA_URL
+        if not config.OLLAMA_URL:
+            detail = "OLLAMA_URL is not set (no default -- point it at your server)"
+            checks.append(_result("local_ollama_mode", False, detail))
+            return False, checks, ctx
         try:
             with urllib.request.urlopen(config.OLLAMA_URL.rstrip("/") + "/api/tags", timeout=3) as resp:
                 ollama_ok = (resp.status == 200)

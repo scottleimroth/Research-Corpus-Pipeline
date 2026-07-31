@@ -220,7 +220,12 @@ OPUS_OUTPUT_USD_PER_MTOK = 75.0
 SONNET_ESTIMATE_USD_PER_PAPER = 0.07
 USD_TO_AUD = float(os.environ.get("USD_TO_AUD", "1.55"))
 
-OLLAMA_URL   = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+# No address default: the old localhost:11434 was a guess, not a fact, so an
+# unset OLLAMA_URL probed a port nothing answers and left a reader believing the
+# tier was wired up. Empty means the ollama metadata tier is not configured --
+# it says so and is skipped (see metadata_extractors.extract_ollama). Set
+# OLLAMA_URL to your own Ollama server to enable it.
+OLLAMA_URL   = os.environ.get("OLLAMA_URL", "").strip().rstrip("/")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen3:8b")
 METACHECK_MODE = "advanced"
 METACHECK_ENABLED = True

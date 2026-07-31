@@ -105,6 +105,19 @@ qwen3:8b
 
 Then put PDFs in `papers-staging` and run `RUN.bat`.
 
+### Step 5: If You Use The Staging Screen, Also Set `OLLAMA_URL`
+
+The staging screen has its own separate check for a local server, and it reads
+an environment variable called `OLLAMA_URL` rather than the URL you typed into
+SETUP. Set it to the same server address, without the `/v1` part:
+
+```powershell
+setx OLLAMA_URL "http://localhost:11434"
+```
+
+Open a new terminal afterwards for the change to take effect. If you only use
+`RUN.bat` and never the staging screen, you can skip this.
+
 ## Option B: Lemonade
 
 Use this if you already use Lemonade and it exposes an OpenAI-compatible server.
@@ -183,6 +196,13 @@ The pipeline has no built-in guess for where your local server is — a wrong
 built-in address is worse than an early, clear error. If you see an error
 naming `local_openai_base_url` or `LOCAL_OPENAI_BASE_URL`, run `SETUP.bat`,
 choose `Local/free mode`, and enter the URL and model ID again.
+
+### Staging says `local_ollama_mode` failed, or `OLLAMA_URL is not set`
+
+The staging screen checks a local server address held in the `OLLAMA_URL`
+environment variable, which is separate from the URL you gave SETUP. There is
+no built-in default for it on purpose — a guessed address that nothing answers
+is worse than a clear message. See Step 5 under Option A above.
 
 ### Local model unavailable
 

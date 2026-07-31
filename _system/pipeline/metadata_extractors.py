@@ -224,6 +224,12 @@ def extract_ollama(pdf_path, first_pages_text, doi=None):
     """Local Ollama LLM. Free, slower, requires Ollama running with model pulled."""
     if not first_pages_text or len(first_pages_text.strip()) < 50:
         return {}
+    if not config.OLLAMA_URL:
+        # Distinct from "unavailable": nothing is misconfigured or down, the
+        # tier simply has no address. Saying so beats a connection error
+        # against a guessed default that nothing was ever listening on.
+        print("  [tier ollama] not configured (set OLLAMA_URL to enable); skipping")
+        return {}
     try:
         import requests
         r = requests.post(config.OLLAMA_URL + "/api/generate", json={
