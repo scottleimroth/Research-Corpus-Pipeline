@@ -113,17 +113,13 @@ Use this if you already use Lemonade and it exposes an OpenAI-compatible server.
 
 Open Lemonade and load the model you want to use.
 
-Make sure the server/API port is enabled. Common choices are:
-
-```text
-http://localhost:11434/v1
-```
-
-or:
+Make sure the server/API port is enabled. The canonical Lemonade port is:
 
 ```text
 http://localhost:13305/api/v1
 ```
+
+(Some older Lemonade builds expose `http://localhost:11434/v1` instead, but note that 11434 is the default Ollama port too — confirm via `defaults.json` or `lemonade.exe status` which port your install actually uses.)
 
 Use whichever one Lemonade shows on your computer.
 
@@ -132,13 +128,13 @@ Use whichever one Lemonade shows on your computer.
 Open PowerShell and run:
 
 ```powershell
-Invoke-RestMethod http://localhost:11434/v1/models | ConvertTo-Json -Depth 5
+Invoke-RestMethod http://localhost:13305/api/v1/models | ConvertTo-Json -Depth 5
 ```
 
-If your Lemonade server uses port `13305`, run:
+If your Lemonade server uses the older port `11434`, run:
 
 ```powershell
-Invoke-RestMethod http://localhost:13305/api/v1/models | ConvertTo-Json -Depth 5
+Invoke-RestMethod http://localhost:11434/v1/models | ConvertTo-Json -Depth 5
 ```
 
 Look for the `id` field. Copy it exactly.
@@ -181,6 +177,13 @@ That does not mean you need a Geekom computer. It is just the pipeline's interna
 
 ## Common Problems
 
+### No local model URL is configured
+
+The pipeline has no built-in guess for where your local server is — a wrong
+built-in address is worse than an early, clear error. If you see an error
+naming `local_openai_base_url` or `LOCAL_OPENAI_BASE_URL`, run `SETUP.bat`,
+choose `Local/free mode`, and enter the URL and model ID again.
+
 ### Local model unavailable
 
 This means the pipeline cannot see your local model server.
@@ -197,8 +200,10 @@ Check:
 Use the exact model name from:
 
 ```powershell
-Invoke-RestMethod http://localhost:11434/v1/models | ConvertTo-Json -Depth 5
+Invoke-RestMethod http://localhost:13305/api/v1/models | ConvertTo-Json -Depth 5
 ```
+
+(Substitute `:11434/v1` if your Lemonade build still uses the old port.)
 
 Do not guess the name.
 
