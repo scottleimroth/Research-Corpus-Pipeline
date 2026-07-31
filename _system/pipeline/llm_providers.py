@@ -8,6 +8,7 @@ Env vars:
   OPENAI_API_KEY
   DEEPSEEK_API_KEY
   OPENROUTER_API_KEY
+  LOCAL_OPENAI_BASE_URL (no default; local mode is configured via SETUP)
 """
 import os
 import time
@@ -31,9 +32,17 @@ def _local_profile_value(name: str, default: str) -> str:
         return default
 
 
+# No baked-in address default. The previous fallback (Ollama's localhost:11434)
+# assumed a server that need not exist, so a half-configured local mode probed
+# a dead port instead of failing informatively -- an address default that can
+# rot is the same bug class as the outage it hides. Local mode is configured
+# explicitly: SETUP's local/free mode writes local_openai_base_url into
+# _system/corpus_profile.json, or set the LOCAL_OPENAI_BASE_URL env var.
+# Unset = lane not configured: local_openai_available() reports False and
+# selecting the lane raises LLMConfigError.
 LOCAL_OPENAI_BASE_URL = os.environ.get(
     "LOCAL_OPENAI_BASE_URL",
-    _local_profile_value("local_openai_base_url", "http://localhost:11434/v1"),
+    _local_profile_value("local_openai_base_url", ""),
 ).rstrip("/")
 LOCAL_OPENAI_MODEL_ID = os.environ.get(
     "LOCAL_OPENAI_MODEL_ID",
@@ -44,6 +53,10 @@ LOCAL_OPENAI_NO_THINK = os.environ.get("LOCAL_OPENAI_NO_THINK", "1").strip().low
 OPENROUTER_BASE_URL = os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1").rstrip("/")
 LOCAL_MODEL_KEY = "geekom-qwen3-30b-local"
 _LOCAL_AVAILABILITY_CACHE: dict[str, tuple[float, bool]] = {}
+
+
+class LLMConfigError(RuntimeError):
+    """Misconfiguration retries cannot fix -- call_llm re-raises it without retrying."""
 
 # Model registry: short_name -> (provider, model_id, cost_per_M_in, cost_per_M_out)
 # cost in USD per million tokens. Locals are $0.
@@ -61,9 +74,13 @@ MODELS = {
     "openrouter-qwen3-vl-32b": ("openrouter", "qwen/qwen3-vl-32b-instruct", 0.104, 0.416),
     "openrouter-kimi-k2.5": ("openrouter", "moonshotai/kimi-k2.5", 0.40, 1.90),
     "opus-4":           ("anthropic", "claude-opus-4-20250514", 15.00, 75.00),
-    # Local Lemonade / Geekom OpenAI-compatible endpoint (free, zero cost).
+    # Local OpenAI-compatible endpoint (free, zero cost); the URL comes from
+    # SETUP / corpus_profile.json or LOCAL_OPENAI_BASE_URL -- see comment above.
     LOCAL_MODEL_KEY:     ("local-openai", LOCAL_OPENAI_MODEL_ID, 0.0, 0.0),
-    # Local Ollama models (free, requires Ollama running locally)
+    # Retired Ollama lane (hardcoded localhost:11434): selecting these keys
+    # raises in call_llm; local models go through the local-openai provider
+    # configured by SETUP. Deleting the entries is pending Scott's call (he
+    # chose deletion in asx-alerts, 2026-07-31).
     "qwen3.6-35b":      ("ollama", "qwen3.6:35b-a3b", 0.0, 0.0),
     "gemma4-26b":       ("ollama", "gemma4:26b", 0.0, 0.0),
     "qwen3-8b":         ("ollama", "qwen3:8b", 0.0, 0.0),
@@ -71,7 +88,14 @@ MODELS = {
 
 
 def local_openai_available(*, ttl_seconds: int = 30) -> bool:
-    """True when the local Lemonade OpenAI-compatible server lists the configured model."""
+    """True when the local OpenAI-compatible server lists the configured model.
+
+    An unset LOCAL_OPENAI_BASE_URL means local mode is not configured: report
+    unavailable so escalation ladders skip the lane (call_llm raises the
+    actionable error if the lane is selected outright).
+    """
+    if not LOCAL_OPENAI_BASE_URL:
+        return False
     now = time.time()
     cached = _LOCAL_AVAILABILITY_CACHE.get(LOCAL_OPENAI_MODEL_ID)
     if cached and (now - cached[0]) < ttl_seconds:
@@ -135,6 +159,15 @@ def call_llm(model_key, system, user_text, max_tokens=8192, max_retries=3):
                         },
                     )
                 elif provider == "local-openai":
+                    if not LOCAL_OPENAI_BASE_URL:
+                        raise LLMConfigError(
+                            "Local mode is selected but no local model URL is "
+                            "configured (there is no built-in default on "
+                            "purpose). Run SETUP and choose Local/free mode, or "
+                            "set local_openai_base_url in "
+                            "_system/corpus_profile.json or the "
+                            "LOCAL_OPENAI_BASE_URL environment variable."
+                        )
                     if not local_openai_available():
                         raise RuntimeError(
                             f"local model unavailable at {LOCAL_OPENAI_BASE_URL} "
@@ -151,10 +184,17 @@ def call_llm(model_key, system, user_text, max_tokens=8192, max_retries=3):
                         timeout=LOCAL_LLM_REQUEST_TIMEOUT_SEC,
                     )
                 else:  # ollama
-                    client = OpenAI(
-                        api_key="ollama",  # ignored by Ollama but openai client requires it
-                        base_url="http://localhost:11434/v1",
-                        timeout=LOCAL_LLM_REQUEST_TIMEOUT_SEC,
+                    # Retired lane: the hardcoded localhost:11434 assumed an
+                    # Ollama install that need not exist, so selection probed a
+                    # dead port. Local models go through the local-openai
+                    # provider configured by SETUP. Deleting the provider is
+                    # pending Scott's call (asx-alerts precedent, 2026-07-31,
+                    # where he chose deletion) -- until then it fails loudly.
+                    raise LLMConfigError(
+                        f"model {model_key!r} routes to the retired 'ollama' "
+                        "provider (hardcoded localhost:11434). Configure local "
+                        "mode via SETUP (local-openai provider, key "
+                        f"{LOCAL_MODEL_KEY!r}) or use a cloud model."
                     )
                 system_content = system
                 user_content = user_text
@@ -211,6 +251,8 @@ def call_llm(model_key, system, user_text, max_tokens=8192, max_retries=3):
                 "output_tokens": out_tok,
                 "cost_usd": cost,
             }
+        except LLMConfigError:
+            raise
         except Exception as e:
             if attempt == max_retries - 1:
                 raise
